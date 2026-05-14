@@ -1,17 +1,26 @@
-/*
-** utils.c
-** Timing and logging helpers.
-*/
+#include "codexion.h"
 
-/*
-	get_time_ms():
-		- returns current time in milliseconds using gettimeofday()
+long	get_time_ms(void)
+{
+    struct timeval	tv;
 
-	log_state(monitor, coder_id, message):
-		- lock log mutex
-		- print: "[timestamp] [coder_id] [message]"
-		- unlock log mutex
+    gettimeofday(&tv, NULL);
+    return (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+}
 
-	ms_sleep(ms):
-		- sleep for given milliseconds using usleep()
-*/
+void	ms_sleep(long	ms)
+{
+	usleep(ms * 1000);
+}
+
+void	log_state(t_simulation *sim, int coder_id, char *message)
+{
+    pthread_mutex_lock(&sim->log_mutex);
+    printf("%ld %d %s\n", get_time_ms()- sim->start_time, coder_id, message);
+    pthread_mutex_unlock(&sim->log_mutex);
+}
+
+int	cooldown_elapsed(t_dongle *dongle, t_simulation *sim)
+{
+    return (get_time_ms() - dongle->released_at >= sim->dongle_cooldown);
+}
