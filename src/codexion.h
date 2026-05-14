@@ -19,6 +19,7 @@
 # include <stdlib.h>
 # include <stdio.h>
 # include <string.h>
+# include <limits.h>
 
 /* forward declaration so t_coder can reference t_simulation */
 typedef struct s_simulation	t_simulation;

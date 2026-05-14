@@ -24,6 +24,22 @@ int	ft_is_digit(char *s)
 	return (i > 0);
 }
 
+int	ft_is_valid_int(char *s)
+{
+	long	n;
+
+	if (!ft_is_digit(s))
+		return (0);
+	n = 0;
+	while (*s)
+	{
+		n = n * 10 + (*s++ - '0');
+		if (n > INT_MAX)
+			return (0);
+	}
+	return (1);
+}
+
 char	*ft_to_lower(char *s)
 {
 	char	*start;
@@ -50,7 +66,7 @@ int	validate_args(int argc, char **argv)
 	i = 1;
 	while (i < 8)
 	{
-		if (!ft_is_digit(argv[i]))
+		if (!ft_is_valid_int(argv[i]))
 		{
 			printf("Error: '%s' "
 				"Argument must be a positive integer\n", argv[i]);

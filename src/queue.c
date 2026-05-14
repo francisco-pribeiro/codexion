@@ -6,7 +6,7 @@
 /*   By: fdinis-d <fdinis-d@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/14 16:35:54 by fdinis-d          #+#    #+#             */
-/*   Updated: 2026/05/14 18:37:51 by fdinis-d         ###   ########.fr       */
+/*   Updated: 2026/05/14 19:22:31 by fdinis-d         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,7 @@ static void	queue_push_edf(t_dongle *dongle, t_coder *coder, t_simulation *sim)
 	last_compile = coder->last_compile;
 	pthread_mutex_unlock(&coder->coder_mutex);
 	qs = dongle->queue_size;
+	// strict >: equal deadlines keep arrival order (FIFO tiebreaker)
 	if (dongle->queue[0].deadline > last_compile + sim->time_to_burnout)
 	{
 		dongle->queue[1].coder_id = dongle->queue[0].coder_id;
