@@ -1,10 +1,16 @@
-/*
-** parser.c
-** Argument parsing and validation.
-*/
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   parser.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: fdinis-d <fdinis-d@student.42lisboa.com    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/05/14 16:35:54 by fdinis-d          #+#    #+#             */
+/*   Updated: 2026/05/14 18:34:43 by fdinis-d         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 #include "codexion.h"
-
 
 // atencao que nao esta a verificar se é um int
 int	ft_is_digit(char *s)
@@ -32,9 +38,9 @@ char	*ft_to_lower(char *s)
 	return (start);
 }
 
-int validate_args(int argc, char **argv)
+int	validate_args(int argc, char **argv)
 {
-	int i;
+	int	i;
 
 	if (argc != 9)
 	{
@@ -46,12 +52,14 @@ int validate_args(int argc, char **argv)
 	{
 		if (!ft_is_digit(argv[i]))
 		{
-			printf("Error: '%s' Argument must be a positive integer\n", argv[i]);
+			printf("Error: '%s' "
+				"Argument must be a positive integer\n", argv[i]);
 			return (0);
 		}
 		i++;
 	}
-	if (strcmp(ft_to_lower(argv[8]), "fifo") != 0 && strcmp(ft_to_lower(argv[8]), "edf") != 0)
+	if (strcmp(ft_to_lower(argv[8]), "fifo") != 0
+		&& strcmp(ft_to_lower(argv[8]), "edf") != 0)
 	{
 		printf("Error: '%s' must be 'fifo' or 'edf'\n", argv[8]);
 		return (0);

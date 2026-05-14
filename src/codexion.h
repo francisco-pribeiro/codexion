@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   codexion.h                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: fdinis-d <fdinis-d@student.42lisboa.com    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/05/14 16:35:54 by fdinis-d          #+#    #+#             */
+/*   Updated: 2026/05/14 16:35:54 by fdinis-d         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef CODEXION_H
 # define CODEXION_H
 
@@ -40,7 +52,7 @@ typedef struct s_coder
 	t_dongle		*right_dongle;
 	t_simulation	*sim;
 	long			last_compile;
-	int				alive;
+	pthread_mutex_t	coder_mutex;
 }	t_coder;
 
 /* ---- simulation struct ---- */
@@ -81,6 +93,12 @@ int		queue_pop(t_dongle *dongle);
 /* dongle.c */
 int		dongle_acquire(t_dongle *dongle, t_coder *coder, t_simulation *sim);
 void	dongle_release(t_dongle *dongle);
+
+/* simulation.c */
+int		has_stoped(t_simulation *sim);
+void	init_simulation(t_simulation *sim);
+void	init_coder_and_dongles(t_simulation *sim);
+void	cleanup(t_simulation *sim, pthread_t *coder_threads);
 
 /* coder.c */
 void	*coder_routine(void *arg);

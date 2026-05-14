@@ -5,17 +5,17 @@ SRCDIR = src
 
 SRCS = $(SRCDIR)/main.c $(SRCDIR)/parser.c $(SRCDIR)/monitor.c \
        $(SRCDIR)/queue.c $(SRCDIR)/coder.c $(SRCDIR)/utils.c \
-	   $(SRCDIR)/dongle.c
+	   $(SRCDIR)/dongle.c $(SRCDIR)/simulation.c
 
 OBJS = $(SRCS:.c=.o)
 
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	$(CC) $(FLAGS) $(OBJS) -o $(NAME)
+	$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
 
 %.o: %.c
-	$(CC) $(FLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(OBJS)
