@@ -6,7 +6,7 @@
 /*   By: fdinis-d <fdinis-d@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/14 16:35:54 by fdinis-d          #+#    #+#             */
-/*   Updated: 2026/05/14 17:35:28 by fdinis-d         ###   ########.fr       */
+/*   Updated: 2026/05/15 21:14:32 by fdinis-d         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,8 @@ void	log_state(t_simulation *sim, int coder_id, char *message)
 {
 	pthread_mutex_lock(&sim->log_mutex);
 	if (!has_stoped(sim))
-		printf("%ld %d %s\n", get_time_ms() - sim->start_time, coder_id, message);
+		printf("%ld %d %s\n",
+			get_time_ms() - sim->start_time, coder_id, message);
 	pthread_mutex_unlock(&sim->log_mutex);
 }
 
