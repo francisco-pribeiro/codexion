@@ -102,6 +102,11 @@ detection it logs `burned out`, sets the stop flag under `stop_mutex`, and
 broadcasts to all dongle condition variables so waiting threads unblock and
 exit cleanly.
 
+**`n_coders` limit** — With extremely large values (e.g. 999999), the OS thread
+limit causes `pthread_create` to fail silently for later coders. The simulation
+will then hang on `pthread_join` for thread IDs that were never initialised.
+Inputs beyond a few thousand coders are not supported.
+
 **Log serialization** — All output goes through `log_state`, which holds
 `log_mutex` for the duration of the `printf` call. This prevents lines from
 different threads from interleaving on stdout.
