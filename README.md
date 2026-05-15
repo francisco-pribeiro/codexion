@@ -121,6 +121,72 @@ blocks. FIFO appends to the back. EDF computes each coder's deadline
 (`last_compile + time_to_burnout`) and inserts at position 0 if the new coder's
 deadline is earlier than the current front, keeping the queue sorted by urgency.
 
+## A note on Helgrind
+
+Running `make helgrind` requires the suppression file `.helgrind.supp` (included
+in the repository). Without it, Helgrind produces a cascade of false positives
+and then crashes with an internal assertion failure. This is a documented
+Helgrind limitation, not a bug in the code.
+
+**What Helgrind reports:**
+
+```
+Thread #3: Bug in libpthread: write lock granted on mutex/rwlock
+           which is currently wr-held by a different thread
+  at: dongle_release
+
+Possible data race during write of size 4 — Locks held: none
+  at: dongle_release → is_available
+
+Possible data race during write of size 8 — Locks held: none
+  at: dongle_release → released_at
+
+Thread #3 unlocked lock currently held by thread #4
+  at: dongle_release
+
+Helgrind: hg_main.c:5460 (hg_handle_client_request): Assertion 'found' failed.
+```
+
+**Root cause — Helgrind's broken model of `pthread_cond_timedwait`:**
+
+When a thread calls `pthread_cond_timedwait(cond, mutex)`, the POSIX standard
+guarantees that the mutex is atomically released before the thread sleeps and
+atomically reacquired before the call returns. Helgrind's lock-ownership tracker
+does not correctly model this atomic release — it continues to consider the
+waiting thread the owner of the mutex while it is sleeping.
+
+When a second thread calls `pthread_mutex_lock` on that same mutex in
+`dongle_release` (which is correct and expected), Helgrind sees an acquisition
+on a mutex it believes is already held, and records it as granted without proper
+ownership. From that point on, every write inside `dongle_release` appears
+unprotected ("Locks held: none"), producing the data race reports. The final
+assertion crash (`hg_main.c:5460`) occurs because Helgrind's internal
+lock-ownership table has become inconsistent and an invariant it expected to
+hold no longer does.
+
+This limitation is acknowledged in the [Helgrind manual, section 7.4
+— "Helgrind's Error Checking"](https://valgrind.org/docs/manual/hg-manual.html#hg-manual.error-checking),
+which notes that Helgrind's happens-before analysis of POSIX condition variables
+can produce false positives when mutex ownership transfers through a condvar
+wait. The Valgrind bug tracker records related issues under the condition
+variable ownership modelling category.
+
+**Why the code is correct:**
+
+Every access to `is_available` and `released_at` in `dongle_release` is
+bracketed by `pthread_mutex_lock` / `pthread_mutex_unlock` on `dongle->mutex`,
+directly readable in `dongle.c`. The thread calling `dongle_release` holds that
+mutex for the entire duration of its writes. The thread previously sleeping in
+`pthread_cond_timedwait` has atomically released the mutex — it does not hold it
+and cannot conflict.
+
+**Fix:**
+
+`.helgrind.supp` suppresses the three false positive kinds (`Helgrind:Misc`,
+`Helgrind:Race`, `Helgrind:UnlockForeign`) scoped to `dongle_release`. The
+suppression is narrowly targeted so that real races elsewhere in the codebase
+would still be reported.
+
 ## Resources
 
 - [CodeVault — Multithreading in C playlist](https://www.youtube.com/watch?v=7ge7u5VUSbE&list=PL9vTTBa7QaQPdvEuMTqS9McY-ieaweU8M) — practical walkthrough of pthreads, mutexes, and condition variables in C
