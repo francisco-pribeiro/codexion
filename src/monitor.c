@@ -12,15 +12,11 @@
 
 #include "codexion.h"
 
-// safely stops simulation locking the mutex
-static void	stop_simulation(t_simulation *sim)
+static void	broadcast_all(t_simulation *sim)
 {
 	int	i;
 
 	i = 0;
-	pthread_mutex_lock(&sim->stop_mutex);
-	sim->stop = 1;
-	pthread_mutex_unlock(&sim->stop_mutex);
 	while (i < sim->number_of_coders)
 	{
 		pthread_mutex_lock(&sim->dongles[i].mutex);
@@ -28,6 +24,14 @@ static void	stop_simulation(t_simulation *sim)
 		pthread_mutex_unlock(&sim->dongles[i].mutex);
 		i++;
 	}
+}
+
+static void	stop_simulation(t_simulation *sim)
+{
+	pthread_mutex_lock(&sim->stop_mutex);
+	sim->stop = 1;
+	pthread_mutex_unlock(&sim->stop_mutex);
+	broadcast_all(sim);
 }
 
 // check if all coders compiled required times
@@ -62,8 +66,14 @@ static int	any_burned_out(t_simulation *sim, t_coder *coders)
 			&& get_time_ms() - coders[i].last_compile >= sim->time_to_burnout)
 		{
 			pthread_mutex_unlock(&coders[i].coder_mutex);
-			log_state(sim, coders[i].id, "burned out");
-			stop_simulation(sim);
+			pthread_mutex_lock(&sim->log_mutex);
+			printf("%ld %d burned out\n",
+				get_time_ms() - sim->start_time, coders[i].id);
+			pthread_mutex_lock(&sim->stop_mutex);
+			sim->stop = 1;
+			pthread_mutex_unlock(&sim->stop_mutex);
+			pthread_mutex_unlock(&sim->log_mutex);
+			broadcast_all(sim);
 			return (1);
 		}
 		pthread_mutex_unlock(&coders[i].coder_mutex);

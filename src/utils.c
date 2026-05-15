@@ -28,7 +28,8 @@ void	ms_sleep(long ms)
 void	log_state(t_simulation *sim, int coder_id, char *message)
 {
 	pthread_mutex_lock(&sim->log_mutex);
-	printf("%ld %d %s\n", get_time_ms() - sim->start_time, coder_id, message);
+	if (!has_stoped(sim))
+		printf("%ld %d %s\n", get_time_ms() - sim->start_time, coder_id, message);
 	pthread_mutex_unlock(&sim->log_mutex);
 }
 
