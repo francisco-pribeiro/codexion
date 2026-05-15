@@ -72,14 +72,11 @@ static int	any_burned_out(t_simulation *sim, t_coder *coders)
 	return (0);
 }
 
-// TODO: broadcasting everytime - see if we can find more efficent option
-
 // function passed to monitor thread - monitors burn outs
 void	*monitor_routine(void *arg)
 {
 	t_simulation	*sim;
 	t_coder			*coders;
-	int				i;
 
 	sim = (t_simulation *)arg;
 	coders = sim->coders;
@@ -91,14 +88,6 @@ void	*monitor_routine(void *arg)
 		{
 			stop_simulation(sim);
 			return (NULL);
-		}
-		i = 0;
-		while (i < sim->number_of_coders)
-		{
-			pthread_mutex_lock(&sim->dongles[i].mutex);
-			pthread_cond_broadcast(&sim->dongles[i].cond);
-			pthread_mutex_unlock(&sim->dongles[i].mutex);
-			i++;
 		}
 		ms_sleep(1);
 	}
