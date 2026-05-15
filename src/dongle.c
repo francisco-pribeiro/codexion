@@ -50,7 +50,8 @@ int	dongle_acquire(t_dongle *dongle, t_coder *coder, t_simulation *sim)
 {
 	pthread_mutex_lock(&dongle->mutex);
 	queue_push(dongle, coder, sim);
-	if (!wait_for_slot(dongle, coder) || !wait_cooldown(dongle, coder))
+	if (!wait_for_slot(dongle, coder) || !wait_cooldown(dongle, coder)
+		|| has_stoped(coder->sim))
 	{
 		queue_pop(dongle);
 		pthread_mutex_unlock(&dongle->mutex);
