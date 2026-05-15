@@ -14,7 +14,6 @@
 # define CODEXION_H
 
 # include <pthread.h>
-# include <time.h>
 # include <sys/time.h>
 # include <unistd.h>
 # include <stdlib.h>
@@ -99,8 +98,9 @@ void	dongle_release(t_dongle *dongle);
 
 /* simulation.c */
 int		has_stoped(t_simulation *sim);
-void	init_simulation(t_simulation *sim);
+int		init_simulation(t_simulation *sim);
 void	init_coder_and_dongles(t_simulation *sim);
+void	run_simulation(t_simulation *sim, pthread_t *coder_threads);
 void	cleanup(t_simulation *sim, pthread_t *coder_threads);
 
 /* coder.c */

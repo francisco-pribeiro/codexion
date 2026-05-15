@@ -6,7 +6,7 @@
 /*   By: fdinis-d <fdinis-d@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/14 16:35:54 by fdinis-d          #+#    #+#             */
-/*   Updated: 2026/05/14 16:35:54 by fdinis-d         ###   ########.fr       */
+/*   Updated: 2026/05/15 16:25:36 by fdinis-d         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,7 @@
 
 int	main(int ac, char **av)
 {
-	int				i;
 	t_simulation	sim;
-	pthread_t		monitor;
 	pthread_t		*coder_threads;
 
 	if (!parse_args(ac, av, &sim))
@@ -24,19 +22,10 @@ int	main(int ac, char **av)
 	coder_threads = malloc(sizeof(pthread_t) * sim.number_of_coders);
 	if (!coder_threads)
 		return (1);
-	init_simulation(&sim);
+	if (!init_simulation(&sim))
+		return (free(coder_threads), 1);
 	init_coder_and_dongles(&sim);
-	pthread_create(&monitor, NULL, monitor_routine, &sim);
-	i = 0;
-	while (i < sim.number_of_coders)
-	{
-		pthread_create(&coder_threads[i], NULL, coder_routine, &sim.coders[i]);
-		i++;
-	}
-	pthread_join(monitor, NULL);
-	i = 0;
-	while (i < sim.number_of_coders)
-		pthread_join(coder_threads[i++], NULL);
+	run_simulation(&sim, coder_threads);
 	cleanup(&sim, coder_threads);
 	return (0);
 }

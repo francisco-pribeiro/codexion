@@ -24,16 +24,17 @@ int	has_stoped(t_simulation *sim)
 	return (0);
 }
 
-void	init_simulation(t_simulation *sim)
+int	init_simulation(t_simulation *sim)
 {
 	sim->coders = malloc(sizeof(t_coder) * sim->number_of_coders);
 	sim->dongles = malloc(sizeof(t_dongle) * sim->number_of_coders);
 	if (!sim->coders || !sim->dongles)
-		exit(1);
+		return (0);
 	pthread_mutex_init(&sim->log_mutex, NULL);
 	pthread_mutex_init(&sim->stop_mutex, NULL);
 	sim->stop = 0;
 	sim->start_time = get_time_ms();
+	return (1);
 }
 
 void	init_coder_and_dongles(t_simulation *sim)
@@ -60,6 +61,24 @@ void	init_coder_and_dongles(t_simulation *sim)
 		pthread_mutex_init(&sim->coders[i].coder_mutex, NULL);
 		i++;
 	}
+}
+
+void	run_simulation(t_simulation *sim, pthread_t *coder_threads)
+{
+	pthread_t	monitor;
+	int			i;
+
+	i = 0;
+	pthread_create(&monitor, NULL, monitor_routine, sim);
+	while (i < sim->number_of_coders)
+	{
+		pthread_create(&coder_threads[i], NULL, coder_routine, &sim->coders[i]);
+		i++;
+	}
+	pthread_join(monitor, NULL);
+	i = 0;
+	while (i < sim->number_of_coders)
+		pthread_join(coder_threads[i++], NULL);
 }
 
 void	cleanup(t_simulation *sim, pthread_t *coder_threads)

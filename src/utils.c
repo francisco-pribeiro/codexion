@@ -39,9 +39,11 @@ int	cooldown_elapsed(t_dongle *dongle, t_simulation *sim)
 
 void	set_timeout(struct timespec *ts, long ms)
 {
-	clock_gettime(CLOCK_REALTIME, ts);
-	ts->tv_sec += ms / 1000;
-	ts->tv_nsec += (ms % 1000) * 1000000L;
+	struct timeval	tv;
+
+	gettimeofday(&tv, NULL);
+	ts->tv_sec = tv.tv_sec + ms / 1000;
+	ts->tv_nsec = tv.tv_usec * 1000 + (ms % 1000) * 1000000L;
 	if (ts->tv_nsec >= 1000000000L)
 	{
 		ts->tv_sec += 1;
