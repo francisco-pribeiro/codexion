@@ -12,6 +12,18 @@
 
 #include "codexion.h"
 
+static void	cond_wait_cooldown(t_dongle *dongle, t_simulation *sim)
+{
+	struct timespec	ts;
+	long			remaining;
+
+	remaining = sim->dongle_cooldown - (get_time_ms() - dongle->released_at);
+	if (remaining < 1)
+		remaining = 1;
+	set_timeout(&ts, remaining);
+	pthread_cond_timedwait(&dongle->cond, &dongle->mutex, &ts);
+}
+
 int	dongle_acquire(t_dongle *dongle, t_coder *coder, t_simulation *sim)
 {
 	pthread_mutex_lock(&dongle->mutex);
@@ -31,7 +43,7 @@ int	dongle_acquire(t_dongle *dongle, t_coder *coder, t_simulation *sim)
 			pthread_mutex_unlock(&dongle->mutex);
 			return (0);
 		}
-		pthread_cond_wait(&dongle->cond, &dongle->mutex);
+		cond_wait_cooldown(dongle, sim);
 	}
 	pthread_mutex_unlock(&dongle->mutex);
 	return (1);

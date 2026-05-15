@@ -14,6 +14,7 @@
 # define CODEXION_H
 
 # include <pthread.h>
+# include <time.h>
 # include <sys/time.h>
 # include <unistd.h>
 # include <stdlib.h>
@@ -86,6 +87,7 @@ long	get_time_ms(void);
 void	log_state(t_simulation *sim, int coder_id, char *message);
 void	ms_sleep(long ms);
 int		cooldown_elapsed(t_dongle *dongle, t_simulation *sim);
+void	set_timeout(struct timespec *ts, long ms);
 
 /* queue.c */
 void	queue_push(t_dongle *dongle, t_coder *coder, t_simulation *sim);
