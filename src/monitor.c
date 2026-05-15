@@ -22,7 +22,12 @@ static void	stop_simulation(t_simulation *sim)
 	sim->stop = 1;
 	pthread_mutex_unlock(&sim->stop_mutex);
 	while (i < sim->number_of_coders)
-		pthread_cond_broadcast(&sim->dongles[i++].cond);
+	{
+		pthread_mutex_lock(&sim->dongles[i].mutex);
+		pthread_cond_broadcast(&sim->dongles[i].cond);
+		pthread_mutex_unlock(&sim->dongles[i].mutex);
+		i++;
+	}
 }
 
 // check if all coders compiled required times
@@ -89,7 +94,12 @@ void	*monitor_routine(void *arg)
 		}
 		i = 0;
 		while (i < sim->number_of_coders)
-			pthread_cond_broadcast(&sim->dongles[i++].cond);
+		{
+			pthread_mutex_lock(&sim->dongles[i].mutex);
+			pthread_cond_broadcast(&sim->dongles[i].cond);
+			pthread_mutex_unlock(&sim->dongles[i].mutex);
+			i++;
+		}
 		ms_sleep(1);
 	}
 }
