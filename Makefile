@@ -35,6 +35,6 @@ valgrind: all
 		./$(NAME) $(ARGS)
 
 helgrind: all
-	valgrind --tool=helgrind ./$(NAME) $(ARGS)
+	valgrind --tool=helgrind --suppressions=.helgrind.supp ./$(NAME) $(ARGS)
 
 .PHONY: all clean fclean re run valgrind helgrind
