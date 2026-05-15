@@ -46,12 +46,32 @@ Requires a C compiler and POSIX threads (`-pthread`). No external libraries need
 | `dongle_cooldown` | Ms a dongle must rest before being reacquired |
 | `fifo\|edf` | Scheduling policy for the dongle wait queue |
 
+### Makefile targets
+
 ```sh
-make run                                      # default: 5 coders, fifo
-make run ARGS="3 800 200 200 200 3 0 edf"    # 3 coders, EDF scheduler
+make run                                       # run with default args (5 coders, fifo)
+make run ARGS="3 800 200 200 200 3 0 edf"     # run with custom args
+```
+
+**Linux** — Valgrind runs natively:
+
+```sh
 make valgrind ARGS="4 800 200 100 100 3 30 fifo"
 make helgrind ARGS="4 800 200 100 100 3 30 fifo"
 ```
+
+**macOS** — Valgrind is not supported on macOS. Use the Docker targets instead
+(requires Docker Desktop):
+
+```sh
+make docker-build                                        # build the image once
+make docker-helgrind ARGS="4 800 200 100 100 3 30 fifo" # run helgrind in container
+make docker-valgrind ARGS="4 800 200 100 100 3 30 fifo" # run valgrind in container
+```
+
+The project directory is mounted as a volume so edits on macOS are picked up
+immediately without rebuilding the image. The binary is recompiled for Linux
+inside the container on each run.
 
 ## Blocking cases handled
 
@@ -70,10 +90,11 @@ further prioritises coders closest to burning out by sorting the queue by
 deadline, preventing any coder from being skipped indefinitely.
 
 **Cooldown handling** — After a dongle is released, it must rest for
-`dongle_cooldown` ms before being reacquired. Waiting coders use
-`pthread_cond_timedwait` with a timeout set to the exact remaining cooldown
-duration, so they wake up precisely when the dongle becomes acquirable again
-without relying on external polling or spurious wakeups.
+`dongle_cooldown` ms before being reacquired. Acquisition is split into two
+phases: phase 1 blocks on `pthread_cond_wait` until the dongle is available and
+the coder is first in queue; phase 2 computes the exact remaining cooldown time
+and sleeps precisely that duration with `usleep`, then reacquires the mutex and
+proceeds.
 
 **Burnout detection** — A dedicated monitor thread checks every ~1ms whether
 any coder has exceeded `time_to_burnout` ms since its last compile. On
@@ -94,14 +115,14 @@ different threads from interleaving on stdout.
 | `sim->stop_mutex` | `sim->stop` |
 | `sim->log_mutex` | stdout |
 
-**Acquiring dongles** — `dongle_acquire` locks the dongle mutex, pushes the
-coder into the wait queue, then enters a loop. Each iteration checks whether
-the dongle is available, the coder is at the front of the queue, and the
-cooldown has elapsed. If any condition fails, the coder calls
-`pthread_cond_timedwait` with a deadline matching the remaining cooldown — it
-either wakes early when another coder broadcasts on release, or times out
-exactly when the cooldown expires. All reads and writes to dongle state happen
-inside the lock.
+**Acquiring dongles** — `dongle_acquire` locks the dongle mutex and pushes the
+coder into the wait queue, then runs two phases. Phase 1 (`wait_for_slot`)
+blocks on `pthread_cond_wait` until the dongle is available and the coder is
+first in queue — woken by `pthread_cond_broadcast` from `dongle_release`. Phase
+2 (`wait_cooldown`) releases the mutex, sleeps the exact remaining cooldown
+duration, then reacquires and verifies. Both helpers always return with the
+mutex held, and `dongle_acquire` handles cleanup on failure. All reads and
+writes to dongle state happen inside the lock.
 
 **Releasing dongles** — `dongle_release` locks the dongle mutex, marks the
 dongle available, records the release timestamp, then calls
@@ -112,9 +133,10 @@ and sleep again.
 **Monitor communication** — The stop flag is the only shared state between the
 monitor and coder threads outside of dongle locks. The monitor writes it under
 `stop_mutex`; coders read it via `has_stoped`, also under `stop_mutex`. After
-setting the flag, the monitor broadcasts to every dongle condition variable so
-coders blocked in `pthread_cond_timedwait` unblock immediately rather than
-waiting for their timeout.
+setting the flag, the monitor broadcasts to every dongle condition variable to
+wake coders blocked in `pthread_cond_wait`. Coders sleeping in the cooldown
+phase (`usleep`) detect the stop flag immediately after waking, before
+reacquiring the dongle mutex.
 
 **Scheduling** — `queue_push` determines insert position before the coder
 blocks. FIFO appends to the back. EDF computes each coder's deadline
@@ -123,69 +145,16 @@ deadline is earlier than the current front, keeping the queue sorted by urgency.
 
 ## A note on Helgrind
 
-Running `make helgrind` requires the suppression file `.helgrind.supp` (included
-in the repository). Without it, Helgrind produces a cascade of false positives
-and then crashes with an internal assertion failure. This is a documented
-Helgrind limitation, not a bug in the code.
+The implementation runs clean under Helgrind — **0 errors from 0 contexts**.
 
-**What Helgrind reports:**
-
-```
-Thread #3: Bug in libpthread: write lock granted on mutex/rwlock
-           which is currently wr-held by a different thread
-  at: dongle_release
-
-Possible data race during write of size 4 — Locks held: none
-  at: dongle_release → is_available
-
-Possible data race during write of size 8 — Locks held: none
-  at: dongle_release → released_at
-
-Thread #3 unlocked lock currently held by thread #4
-  at: dongle_release
-
-Helgrind: hg_main.c:5460 (hg_handle_client_request): Assertion 'found' failed.
-```
-
-**Root cause — Helgrind's broken model of `pthread_cond_timedwait`:**
-
-When a thread calls `pthread_cond_timedwait(cond, mutex)`, the POSIX standard
-guarantees that the mutex is atomically released before the thread sleeps and
-atomically reacquired before the call returns. Helgrind's lock-ownership tracker
-does not correctly model this atomic release — it continues to consider the
-waiting thread the owner of the mutex while it is sleeping.
-
-When a second thread calls `pthread_mutex_lock` on that same mutex in
-`dongle_release` (which is correct and expected), Helgrind sees an acquisition
-on a mutex it believes is already held, and records it as granted without proper
-ownership. From that point on, every write inside `dongle_release` appears
-unprotected ("Locks held: none"), producing the data race reports. The final
-assertion crash (`hg_main.c:5460`) occurs because Helgrind's internal
-lock-ownership table has become inconsistent and an invariant it expected to
-hold no longer does.
-
-This limitation is acknowledged in the [Helgrind manual, section 7.4
-— "Helgrind's Error Checking"](https://valgrind.org/docs/manual/hg-manual.html#hg-manual.error-checking),
-which notes that Helgrind's happens-before analysis of POSIX condition variables
-can produce false positives when mutex ownership transfers through a condvar
-wait. The Valgrind bug tracker records related issues under the condition
-variable ownership modelling category.
-
-**Why the code is correct:**
-
-Every access to `is_available` and `released_at` in `dongle_release` is
-bracketed by `pthread_mutex_lock` / `pthread_mutex_unlock` on `dongle->mutex`,
-directly readable in `dongle.c`. The thread calling `dongle_release` holds that
-mutex for the entire duration of its writes. The thread previously sleeping in
-`pthread_cond_timedwait` has atomically released the mutex — it does not hold it
-and cannot conflict.
-
-**Fix:**
-
-`.helgrind.supp` suppresses the three false positive kinds (`Helgrind:Misc`,
-`Helgrind:Race`, `Helgrind:UnlockForeign`) scoped to `dongle_release`. The
-suppression is narrowly targeted so that real races elsewhere in the codebase
-would still be reported.
+An earlier version used `pthread_cond_timedwait` for the cooldown wait.
+Helgrind does not correctly model the atomic mutex release inside
+`pthread_cond_timedwait` (acknowledged in the [Helgrind manual, section 7.4](https://valgrind.org/docs/manual/hg-manual.html#hg-manual.error-checking)),
+which caused a cascade of false ownership warnings and an internal assertion
+crash (`hg_main.c:5460`). The current two-phase approach avoids this entirely
+by using plain `pthread_cond_wait` (which Helgrind models correctly) for the
+availability wait, and `usleep` (which has no mutex interaction) for the
+cooldown wait.
 
 ## Resources
 
