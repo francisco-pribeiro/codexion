@@ -37,7 +37,7 @@ int	ft_is_valid_int(char *s)
 		if (n > INT_MAX)
 			return (0);
 	}
-	return (1);
+	return (n > 0);
 }
 
 char	*ft_to_lower(char *s)
@@ -66,10 +66,16 @@ int	validate_args(int argc, char **argv)
 	i = 1;
 	while (i < 8)
 	{
-		if (!ft_is_valid_int(argv[i]))
+		if (i < 7 && !ft_is_valid_int(argv[i]))
 		{
 			printf("Error: '%s' "
 				"Argument must be a positive integer\n", argv[i]);
+			return (0);
+		}
+		if (i == 7 && !ft_is_digit(argv[i]))
+		{
+			printf("Error: '%s' "
+				"Argument must be a non-negative integer\n", argv[i]);
 			return (0);
 		}
 		i++;
