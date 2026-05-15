@@ -28,8 +28,12 @@ static int	wait_for_slot(t_dongle *dongle, t_coder *coder)
 
 static int	wait_cooldown(t_dongle *dongle, t_coder *coder)
 {
+	long	remaining;
+
 	while (!cooldown_elapsed(dongle, coder->sim))
 	{
+		remaining = coder->sim->dongle_cooldown
+			- (get_time_ms() - dongle->released_at);
 		pthread_mutex_unlock(&dongle->mutex);
 		if (has_stoped(coder->sim))
 		{
@@ -38,7 +42,8 @@ static int	wait_cooldown(t_dongle *dongle, t_coder *coder)
 			pthread_mutex_unlock(&dongle->mutex);
 			return (0);
 		}
-		usleep(100);
+		if (remaining > 0)
+			usleep(remaining * 1000);
 		pthread_mutex_lock(&dongle->mutex);
 	}
 	return (1);
