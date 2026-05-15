@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by fribeir-.*
+*This project has been created as part of the 42 curriculum by fdinis-d.*
 
 # Codexion
 
