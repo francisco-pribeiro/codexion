@@ -5,6 +5,7 @@
 ## Description
 
 The dining philosophers problem, but with coders and USB dongles.
+<img width="1536" height="1024" alt="ChatGPT Image May 15, 2026, 04_21_45 PM" src="https://github.com/user-attachments/assets/5dbbdce1-ad33-49a9-bf5c-9e6e4af1db4b" />
 
 Each coder needs two dongles to compile. Dongles are shared with neighbours in a
 circular arrangement, so coders must coordinate without deadlocking or starving.
