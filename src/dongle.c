@@ -36,6 +36,11 @@ static int	wait_cooldown(t_dongle *dongle, t_coder *coder)
 		}
 		if (remaining > 0)
 			ms_sleep(remaining);
+		if (has_stoped(coder->sim))
+		{
+			pthread_mutex_lock(&dongle->mutex);
+			return (0);
+		}
 		pthread_mutex_lock(&dongle->mutex);
 	}
 	return (1);
