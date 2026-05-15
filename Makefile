@@ -35,6 +35,15 @@ valgrind: all
 		./$(NAME) $(ARGS)
 
 helgrind: all
-	valgrind --tool=helgrind --suppressions=.helgrind.supp ./$(NAME) $(ARGS)
+	valgrind --tool=helgrind ./$(NAME) $(ARGS)
 
-.PHONY: all clean fclean re run valgrind helgrind
+docker-build:
+	docker build -t codexion-valgrind .
+
+docker-helgrind: docker-build
+	docker run --rm -v $(PWD):/app codexion-valgrind make re helgrind ARGS="$(ARGS)"
+
+docker-valgrind: docker-build
+	docker run --rm -v $(PWD):/app codexion-valgrind make re valgrind ARGS="$(ARGS)"
+
+.PHONY: all clean fclean re run valgrind helgrind docker-build docker-helgrind docker-valgrind
