@@ -43,7 +43,7 @@ static int	wait_cooldown(t_dongle *dongle, t_coder *coder)
 			return (0);
 		}
 		if (remaining > 0)
-			usleep(remaining * 1000);
+			ms_sleep(remaining);
 		pthread_mutex_lock(&dongle->mutex);
 	}
 	return (1);
