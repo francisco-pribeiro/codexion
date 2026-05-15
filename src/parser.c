@@ -32,9 +32,9 @@ int	ft_is_valid_int(char *s)
 	n = 0;
 	while (*s)
 	{
-		n = n * 10 + (*s++ - '0');
-		if (n > INT_MAX)
+		if (n > (INT_MAX - (*s - '0')) / 10)
 			return (0);
+		n = n * 10 + (*s++ - '0');
 	}
 	return (n > 0);
 }

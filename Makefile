@@ -27,6 +27,9 @@ re: fclean all
 
 ARGS ?= 5 800 200 200 200 5 50 fifo
 
+run: all
+	./$(NAME) $(ARGS)
+
 valgrind: all
 	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all \
 		./$(NAME) $(ARGS)
@@ -34,4 +37,4 @@ valgrind: all
 helgrind: all
 	valgrind --tool=helgrind ./$(NAME) $(ARGS)
 
-.PHONY: all clean fclean re valgrind helgrind
+.PHONY: all clean fclean re run valgrind helgrind
