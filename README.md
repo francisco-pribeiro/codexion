@@ -107,6 +107,17 @@ limit causes `pthread_create` to fail silently for later coders. The simulation
 will then hang on `pthread_join` for thread IDs that were never initialised.
 Inputs beyond a few thousand coders are not supported.
 
+### Thread limits
+
+To check the maximum number of threads your system allows:
+
+```sh
+ulimit -u                              # max processes/threads for your user (Linux/macOS)
+cat /proc/sys/kernel/threads-max      # system-wide thread ceiling (Linux only)
+```
+
+From C code, query the limit at runtime with `getrlimit(RLIMIT_NPROC, &rl)`.
+
 **Log serialization** — All output goes through `log_state`, which holds
 `log_mutex` for the duration of the `printf` call. This prevents lines from
 different threads from interleaving on stdout.
