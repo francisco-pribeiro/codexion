@@ -6,7 +6,7 @@
 /*   By: fdinis-d <fdinis-d@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/14 16:35:54 by fdinis-d          #+#    #+#             */
-/*   Updated: 2026/05/17 02:31:34 by fdinis-d         ###   ########.fr       */
+/*   Updated: 2026/05/17 02:58:27 by fdinis-d         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,7 +72,12 @@ void	run_simulation(t_simulation *sim, pthread_t *coder_threads)
 	pthread_create(&monitor, NULL, monitor_routine, sim);
 	while (i < sim->number_of_coders)
 	{
-		pthread_create(&coder_threads[i], NULL, coder_routine, &sim->coders[i]);
+		if (pthread_create(&coder_threads[i], NULL,
+				coder_routine, &sim->coders[i]) != 0)
+		{
+			sim->stop = 1;
+			break ;
+		}
 		i++;
 	}
 	pthread_join(monitor, NULL);
