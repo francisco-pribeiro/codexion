@@ -6,13 +6,13 @@
 /*   By: fdinis-d <fdinis-d@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/14 16:35:54 by fdinis-d          #+#    #+#             */
-/*   Updated: 2026/05/15 14:02:04 by fdinis-d         ###   ########.fr       */
+/*   Updated: 2026/05/17 00:20:57 by fdinis-d         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "codexion.h"
 
-int	ft_is_digit(char *s)
+static int	ft_is_digit(char *s)
 {
 	int	i;
 
@@ -23,7 +23,7 @@ int	ft_is_digit(char *s)
 	return (i > 0);
 }
 
-int	ft_is_valid_int(char *s)
+static int	ft_is_valid_int(char *s)
 {
 	long	n;
 
@@ -54,7 +54,7 @@ static int	validate_numeric(char **argv)
 		}
 		i++;
 	}
-	if (!ft_is_digit(argv[7]))
+	if (!ft_is_valid_int(argv[7]) && strcmp(argv[7], "0"))
 	{
 		printf("Error: '%s' "
 			"Argument must be a non-negative integer\n", argv[7]);
@@ -63,7 +63,7 @@ static int	validate_numeric(char **argv)
 	return (1);
 }
 
-int	validate_args(int argc, char **argv)
+static int	validate_args(int argc, char **argv)
 {
 	char	*sched;
 	int		j;

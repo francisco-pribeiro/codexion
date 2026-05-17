@@ -6,7 +6,7 @@
 /*   By: fdinis-d <fdinis-d@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/14 16:35:54 by fdinis-d          #+#    #+#             */
-/*   Updated: 2026/05/14 16:55:59 by fdinis-d         ###   ########.fr       */
+/*   Updated: 2026/05/17 01:38:12 by fdinis-d         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,12 +35,7 @@ static int	wait_cooldown(t_dongle *dongle, t_coder *coder)
 			return (0);
 		}
 		if (remaining > 0)
-			ms_sleep(remaining);
-		if (has_stoped(coder->sim))
-		{
-			pthread_mutex_lock(&dongle->mutex);
-			return (0);
-		}
+			ms_sleep(remaining < 10 ? remaining : 10);
 		pthread_mutex_lock(&dongle->mutex);
 	}
 	return (1);

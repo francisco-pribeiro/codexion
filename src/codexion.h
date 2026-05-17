@@ -6,7 +6,7 @@
 /*   By: fdinis-d <fdinis-d@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/14 16:35:54 by fdinis-d          #+#    #+#             */
-/*   Updated: 2026/05/14 16:35:54 by fdinis-d         ###   ########.fr       */
+/*   Updated: 2026/05/17 00:35:28 by fdinis-d         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,12 +25,12 @@
 typedef struct s_simulation	t_simulation;
 
 /* ---- queue entry struct ---- */
-typedef struct s_queue_entry
+typedef struct s_queue
 {
 	int		coder_id;
 	long	arrival_time;
 	long	deadline;
-}	t_queue_entry;
+}	t_queue;
 
 /* ---- dongle struct ---- */
 typedef struct s_dongle
@@ -40,7 +40,7 @@ typedef struct s_dongle
 	int				id;
 	int				is_available;
 	long			released_at;
-	t_queue_entry	queue[2];
+	t_queue			queue[2];
 	int				queue_size;
 }	t_dongle;
 
@@ -78,7 +78,6 @@ struct s_simulation
 /* ---- prototypes ---- */
 
 /* parser.c */
-int		validate_args(int argc, char **argv);
 int		parse_args(int ac, char **av, t_simulation *sim);
 
 /* utils.c */
