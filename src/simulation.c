@@ -67,22 +67,25 @@ void	run_simulation(t_simulation *sim, pthread_t *coder_threads)
 {
 	pthread_t	monitor;
 	int			i;
+	int			created;
 
-	i = 0;
+	created = 0;
 	pthread_create(&monitor, NULL, monitor_routine, sim);
-	while (i < sim->number_of_coders)
+	while (created < sim->number_of_coders)
 	{
-		if (pthread_create(&coder_threads[i], NULL,
-				coder_routine, &sim->coders[i]) != 0)
+		if (pthread_create(&coder_threads[created], NULL,
+				coder_routine, &sim->coders[created]) != 0)
 		{
+			pthread_mutex_lock(&sim->stop_mutex);
 			sim->stop = 1;
+			pthread_mutex_unlock(&sim->stop_mutex);
 			break ;
 		}
-		i++;
+		created++;
 	}
 	pthread_join(monitor, NULL);
 	i = 0;
-	while (i < sim->number_of_coders)
+	while (i < created)
 		pthread_join(coder_threads[i++], NULL);
 }
 
